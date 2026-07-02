@@ -1,23 +1,34 @@
 pipeline {
-agent any
-stages {
-  stage('Checkout') {
-    steps {
-// Checkout code from the Git repository
-     sh 'echo checking out'
-   }
-  }
-stage('Build') {
-  steps {
-// Build the Java application (replace with your build commands)
-  sh 'javac -version'
- }
+    agent any
+    
+    stages {
+        stage('Git Clone') {
+            steps {
+                git branch: 'main', url: 'https://github.com/amitopenwriteup/javadocker.git'
+            }
+        }
+        
+        stage('Build with Maven') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+        
+        stage('Archive Artifact') {
+            steps {
+                archiveArtifacts artifacts: 'target/*.jar', 
+                                 allowEmptyArchive: false
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo 'Pipeline executed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed!'
+        }
+    }
 }
-stage('Deploy') {
-  steps {
-  // Deploy the application (replace with your deployment commands)
-   sh 'echo "Deploying the application"'
-   }
-  }
- }
-}
+
