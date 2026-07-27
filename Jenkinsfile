@@ -34,6 +34,14 @@ pipeline {
                 }
             }
         }
+        stage('Push Image') {
+    steps {
+        // Leave the registry URL blank for standard Docker Hub
+        withDockerRegistry([credentialsId: 'docker-hub-credentials', url: '']) {
+            sh 'docker push learner2845/nginx:11'
+        }
+    }
+}
 
         stage('Publish to Docker Hub') {
             steps {
