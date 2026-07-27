@@ -17,6 +17,13 @@ pipeline {
                 checkout scm
             }
         }
+        
+        stage('Cleanup Images') {
+    steps {
+        sh 'docker rmi your-dockerhub-username/nginx:7 || true'
+        sh 'docker rmi your-dockerhub-username/nginx:latest || true'
+    }
+}
 
         stage('Build Docker Image') {
             steps {
