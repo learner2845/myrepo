@@ -4,7 +4,7 @@ pipeline {
     environment {
         // Replace with your actual Docker Hub username and desired repository name
         DOCKER_REGISTRY_USER = 'your-dockerhub-username'
-        DOCKER_IMAGE_NAME    = 'l3-devops-sample-app'
+        DOCKER_IMAGE_NAME    = 'nginx'
         IMAGE_TAG            = "${BUILD_NUMBER}"
         // The ID of the credentials configured in Jenkins
         DOCKER_HUB_CREDS_ID  = 'docker-hub-credentials'
