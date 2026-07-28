@@ -1,71 +1,35 @@
 pipeline {
     agent any
-
     environment {
-        // Replace with your actual Docker Hub username and desired repository name
-        DOCKER_REGISTRY_USER = 'learner2845'
-        DOCKER_IMAGE_NAME    = 'nginx'
-        IMAGE_TAG            = "${BUILD_NUMBER}"
-        // The ID of the credentials configured in Jenkins
-        DOCKER_HUB_CREDS_ID  = 'docker-hub-credentials'
+        // Use Jenkins credential ID for Docker Hub
+        DOCKER_CREDS = credentials('dockerhub-credentials-id')
+        IMAGE_NAME = 'learner2845/l3-devops-app:latest'
     }
-
     stages {
-        stage('Checkout Code') {
+        stage('Checkout') {
             steps {
-                // Pulls the code from the Git repository defined in the Jenkins Job configuration
+                // Pull code from Git
                 checkout scm
             }
         }
-        
-        stage('Cleanup Images') {
-    steps {
-        sh 'docker rmi your-dockerhub-username/nginx:7 || true'
-        sh 'docker rmi your-dockerhub-username/nginx:latest || true'
-    }
-}
-
-        stage('Build Docker Image') {
+        stage('Docker Build') {
             steps {
+                // Build local image
                 script {
-                    echo "Building Docker Image: ${DOCKER_REGISTRY_USER}/${DOCKER_IMAGE_NAME}:${IMAGE_TAG}"
-                    // Builds the image using the Dockerfile in the workspace root
-                    dockerImage = docker.build("${DOCKER_REGISTRY_USER}/${DOCKER_IMAGE_NAME}:${IMAGE_TAG}")
+                    app = docker.build("${env.IMAGE_NAME}")
                 }
             }
         }
-}
-        stage('Publish to Docker Hub') {
+        stage('Docker Push') {
             steps {
+                // Log in and push to Docker Hub safely
                 script {
-                    // Securely authenticates with Docker Hub using the Jenkins credentials store
-                    docker.withRegistry('https://docker.io', DOCKER_HUB_CREDS_ID) {
-                        
-                        echo "Pushing tagged build version..."
-                        dockerImage.push()
-
-                        echo "Pushing latest tag..."
-                        dockerImage.push('latest')
+                    docker.withRegistry('https://docker.com', 'dockerhub-credentials-id') {
+                        app.push('latest')
                     }
                 }
             }
         }
     }
-
-    post {
-        always {
-            script {
-                echo "Cleaning up local workspace images..."
-                // Removes local image copies to prevent disk space exhaustion on the Jenkins agent
-                sh "docker rmi ${DOCKER_REGISTRY_USER}/${DOCKER_IMAGE_NAME}:${IMAGE_TAG} || true"
-                sh "docker rmi ${DOCKER_REGISTRY_USER}/${DOCKER_IMAGE_NAME}:latest || true"
-            }
-        }
-        success {
-            echo "Pipeline completed successfully! Image published to Docker Hub."
-        }
-        failure {
-            echo "Pipeline failed. Check build logs for debugging."
-        }
-    }
 }
+
