@@ -32,21 +32,22 @@ pipeline {
             }
         }
 
-         stage('Publish to Docker Hub') {
-    steps {
-        // withCredentials safely extracts username and password values from Jenkins securely
-        withCredentials([usernamePassword(credentialsId: "${DOCKER_HUB_CREDS_ID}", usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-            sh "echo \$PASS | docker login -u \$USER --password-stdin"
-            
-            echo "Pushing tagged build version..."
-            sh "docker push ${DOCKER_REGISTRY_USER}/${DOCKER_IMAGE_NAME}:${IMAGE_TAG}"
+        stage('Publish to Docker Hub') {
+            steps {
+                script {
+                    // FIX: Wrapped the variable in quotes and a dollar sign so Jenkins reads its value
+                    docker.withRegistry('https://docker.io', "${DOCKER_HUB_CREDS_ID}") {
+                        
+                        echo "Pushing tagged build version..."
+                        dockerImage.push()
 
-            echo "Pushing latest tag..."
-            sh "docker tag ${DOCKER_REGISTRY_USER}/${DOCKER_IMAGE_NAME}:${IMAGE_TAG} ${DOCKER_REGISTRY_USER}/${DOCKER_IMAGE_NAME}:latest"
-            sh "docker push ${DOCKER_REGISTRY_USER}/${DOCKER_IMAGE_NAME}:latest"
+                        echo "Pushing latest tag..."
+                        dockerImage.push('latest')
+                    }
+                }
+            }
         }
     }
-}
 
     post {
         always {
