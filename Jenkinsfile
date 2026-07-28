@@ -33,21 +33,27 @@ pipeline {
         }
 
         stage('Publish to Docker Hub') {
-            steps {
-                script {
-                    // FIX: Wrapped the variable in quotes and a dollar sign so Jenkins reads its value
-                    docker.withRegistry('https://docker.io', "${DOCKER_HUB_CREDS_ID}") {
-                        
-                        echo "Pushing tagged build version..."
-                        dockerImage.push()
+    steps {
+        script {
+            // withCredentials safely extracts username and password values from Jenkins securely
+            withCredentials([usernamePassword(credentialsId: "${DOCKER_HUB_CREDS_ID}", usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                
+                echo "Logging into Docker Hub manually..."
+                // Fixes the cached session bug by forcing a brand-new token authorization
+                sh "echo \$PASS | docker login -u \$USER --password-stdin"
+                
+                echo "Pushing tagged build version..."
+                sh "docker push ${DOCKER_REGISTRY_USER}/${DOCKER_IMAGE_NAME}:${IMAGE_TAG}"
 
-                        echo "Pushing latest tag..."
-                        dockerImage.push('latest')
-                    }
-                }
+                echo "Tagging latest version..."
+                sh "docker tag ${DOCKER_REGISTRY_USER}/${DOCKER_IMAGE_NAME}:${IMAGE_TAG} ${DOCKER_REGISTRY_USER}/${DOCKER_IMAGE_NAME}:latest"
+
+                echo "Pushing latest tag..."
+                sh "docker push ${DOCKER_REGISTRY_USER}/${DOCKER_IMAGE_NAME}:latest"
             }
         }
     }
+}
 
     post {
         always {
